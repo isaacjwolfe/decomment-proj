@@ -1,0 +1,61 @@
+/*-------------------------------------------------------------------*/
+/* dfa                                                               */
+/* Author: Isaac Wolfe                                               */
+/* netid: iwolfe                                                     */
+/*-------------------------------------------------------------------*/
+
+Note: "pc" written next to a transition indicates that we must Print
+Character.
+
+
+Overaching instructions:
+(1) Count newline characters eachtime they appear in order to
+    return unterminated comment line.
+(2) Store the line that a comment begins in case it becomes an
+    unterminated comment.
+
+
+START_STATE (accept)  <-- the start state
+   /: POSSIBLE_COMMENT_STATE
+   ": STRING_LITERAL_STATE          pc
+   ': CHAR_LITERAL_STATE            pc
+   other: START_STATE               pc
+
+POSSIBLE_COMMENT_STATE (accept)
+    *: COMMENT_STATE                print a space
+    /: POSSIBLE_COMMENT_STATE       print '/'
+    ": STRING_LITERAL_STATE         pc and print '/'
+    ': CHAR_LITERAL_STATE           pc and print '/'
+    other: START_STATE              pc and print '/'
+
+COMMENT_STATE (reject)
+    *: POSSIBLE_END_COMMENT_STATE
+    other: COMMENT_STATE            print new line chars as they appear
+
+POSSIBLE_END_COMMENT_STATE (reject)
+    /: START_STATE
+    *: POSSIBLE_END_COMMENT_STATE
+    other: START_STATE              print new line chars as they appear
+
+STRING_LITERAL_STATE (accept)
+    ": START_STATE                  pc
+    \: STRING_ESCAPED_CHAR_STATE    pc
+    other: STRING_LITERAL_STATE     pc
+
+CHAR_LITERAL_STATE (accept)
+    ': START_STATE                  pc
+    \: CHAR_ESCAPED_CHAR_STATE      pc
+    other: CHAR_LITERAL_STATE       pc
+    
+STRING_ESCAPED_CHAR_STATE (accept)
+    all: STRING_LITERAL_STATE       pc (essentially skips a char)
+
+CHAR_ESCAPED_CHAR_STATE (accept)
+    all: CHAR_LITERAL_STATE         pc (essentially skips a char) 
+
+
+Terminating Instructions:
+(1) Return failure if dfa ends in COMMENT_STATE or
+    POSSIBLE_END_COMMENT_STATE
+(2) Print a '/' is it ends in POSSIBLE_COMMENT_STATE
+(3) Print error message in failed states.
